@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大山的悄悄話：我的心今天是什麼天氣？</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .breathe-animation { animation: breathe 4s infinite ease-in-out; }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        .cert-card { background: linear-gradient(135deg, #fdfbf7 0%, #fff 100%); }
+    </style>
+</head>
+<body class="bg-emerald-50 min-h-screen flex flex-col items-center p-4">
+
+    <div id="app" class="w-full max-w-2xl bg-white shadow-2xl rounded-3xl p-6 md:p-10 border-4 border-emerald-200 min-h-[500px] flex flex-col justify-center">
+        <!-- Content will be injected here -->
+    </div>
+
+    <script>
+        let state = {
+            screen: 'intro',
+            mood: null,
+            name: ''
+        };
+
+        const screens = {
+            intro: `
+                <div class="text-center space-y-6">
+                    <div class="text-6xl animate-bounce">🏔️</div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-emerald-800">大山的悄悄話</h1>
+                    <p class="text-lg text-emerald-600 italic">Uninang! Miqumisang! 讓我們一起聽聽心裡的聲音。</p>
+                    <button onclick="changeScreen('meditate')" class="w-full py-4 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition transform hover:scale-105">開始第一步：靜心</button>
+                </div>
+            `,
+            meditate: `
+                <div class="text-center space-y-8">
+                    <h2 class="text-2xl font-bold text-emerald-800">第一步：靜心聽聽大山的聲音</h2>
+                    <div class="breathe-animation w-32 h-32 bg-sky-200 rounded-full mx-auto flex items-center justify-center text-4xl shadow-lg">🌬️</div>
+                    <p class="text-xl text-emerald-700 animate-pulse">深呼吸...想像 ludun (山) 的風...</p>
+                    <button onclick="changeScreen('select')" class="px-8 py-3 bg-sky-500 text-white rounded-full hover:bg-sky-600 transition">準備好了！</button>
+                </div>
+            `,
+            select: `
+                <div class="text-center space-y-6">
+                    <h2 class="text-2xl font-bold text-emerald-800">第二步：我的心情是什麼天氣？</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onclick="setMood('Vali', '☀️')" class="p-6 bg-amber-100 rounded-2xl hover:bg-amber-200 transition border-2 border-amber-200">
+                            <div class="text-4xl">☀️</div>
+                            <div class="font-bold text-amber-900 mt-2">Vali (太陽)</div>
+                            <p class="text-xs">精力充沛、開心！</p>
+                        </button>
+                        <button onclick="setMood('Luhum', '☁️')" class="p-6 bg-gray-100 rounded-2xl hover:bg-gray-200 transition border-2 border-gray-200">
+                            <div class="text-4xl">☁️</div>
+                            <div class="font-bold text-gray-800 mt-2">Luhum (雲朵)</div>
+                            <p class="text-xs">有點累、懶洋洋。</p>
+                        </button>
+                        <button onclick="setMood('Qudan', '🌧️')" class="p-6 bg-blue-100 rounded-2xl hover:bg-blue-200 transition border-2 border-blue-200">
+                            <div class="text-4xl">🌧️</div>
+                            <div class="font-bold text-blue-900 mt-2">Qudan (下雨)</div>
+                            <p class="text-xs">有點小難過。</p>
+                        </button>
+                    </div>
+                </div>
+            `,
+            connection: (mood, icon) => `
+                <div class="text-center space-y-6">
+                    <div class="text-6xl">${icon}</div>
+                    <h2 class="text-2xl font-bold text-emerald-800">你選擇了 ${mood}</h2>
+                    <div class="p-6 bg-emerald-50 rounded-2xl border-2 border-emerald-200 space-y-4">
+                        <p class="text-lg text-emerald-900">請轉向身邊的小夥伴，對他說：</p>
+                        <div class="bg-white p-3 rounded-lg font-bold text-emerald-800 border-dashed border-2 border-emerald-300">
+                            "Uninang! 我今天的心情是 ${mood}。"
+                        </div>
+                        <p class="text-sm text-emerald-600">小夥伴請回：<br>"Miqumisang! 我都在這裡陪你喔！"</p>
+                    </div>
+                    <button onclick="changeScreen('cert')" class="w-full py-4 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition">準備領取勇士證書</button>
+                </div>
+            `,
+            cert: `
+                <div class="text-center space-y-6">
+                    <h2 class="text-2xl font-bold text-emerald-800">第四步：頒發勇士證書</h2>
+                    <input type="text" id="userName" placeholder="請輸入你的布農名字" class="w-full p-4 border-2 border-emerald-300 rounded-xl text-center text-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <button onclick="generateCert()" class="w-full py-4 bg-amber-500 text-white rounded-full font-bold hover:bg-amber-600 transition">製作證書</button>
+                    
+                    <div id="certPreview" class="hidden mt-6">
+                        <div id="certDiv" class="cert-card p-8 border-8 border-double border-amber-600 rounded-lg shadow-xl text-center space-y-4">
+                            <h3 class="text-2xl font-bold text-emerald-900">布農冒險勇士證書</h3>
+                            <p>授與</p>
+                            <h2 id="displayName" class="text-3xl font-bold text-emerald-800 underline"></h2>
+                            <p>你已經學會溫柔地覺察自己的心，<br>如同山林般包容晴天與雨天。</p>
+                            <div class="text-4xl mt-4">🌿🦉✨</div>
+                            <p class="text-sm text-gray-500 italic mt-4">Uu! Manahip saak!</p>
+                        </div>
+                        <button onclick="downloadCert()" class="mt-6 w-full py-3 bg-emerald-800 text-white rounded-lg shadow-lg">下載證書圖片</button>
+                        <button onclick="location.reload()" class="mt-2 text-emerald-600 underline">重新開始</button>
+                    </div>
+                </div>
+            `
+        };
+
+        function changeScreen(screen) {
+            state.screen = screen;
+            render();
+        }
+
+        function setMood(mood, icon) {
+            state.mood = { name: mood, icon: icon };
+            state.screen = 'connection';
+            render();
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            if (state.screen === 'intro') app.innerHTML = screens.intro;
+            else if (state.screen === 'meditate') app.innerHTML = screens.meditate;
+            else if (state.screen === 'select') app.innerHTML = screens.select;
+            else if (state.screen === 'connection') app.innerHTML = screens.connection(state.mood.name, state.mood.icon);
+            else if (state.screen === 'cert') app.innerHTML = screens.cert;
+        }
+
+        function generateCert() {
+            const name = document.getElementById('userName').value;
+            if(!name) return alert("請輸入你的名字喔！");
+            document.getElementById('displayName').innerText = name;
+            document.getElementById('certPreview').classList.remove('hidden');
+        }
+
+        function downloadCert() {
+            html2canvas(document.querySelector("#certDiv")).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '布農冒險證書.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        }
+
+        // Initialize
+        render();
+    </script>
+</body>
+</html>
